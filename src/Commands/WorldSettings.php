@@ -2,7 +2,6 @@
 
 namespace Starpeace\Console\Commands;
 
-use Starpeace\Console\Helpers\Device;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -31,6 +30,12 @@ class WorldSettingsCommand extends Command
         if (!is_file($path)) {
             echo "The path [$path] is not a valid file.";
             exit;
+        }
+
+        $testingPath = dirname(dirname(__DIR__)) . '/Testing/worldconfig.ini';
+
+        if (!is_file($testingPath)) {
+            copy($path, $testingPath);
         }
 
         $iniContents = @parse_ini_file($path);
