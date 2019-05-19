@@ -32,10 +32,14 @@ class WorldSettingsCommand extends Command
             exit;
         }
 
-        $testingPath = dirname(dirname(__DIR__)) . '/Testing/worldconfig.ini';
+        if (!is_dir(APP_PATH . '/Testing')) {
+            @mkdir(APP_PATH . '/Testing');
+        }
+
+        $testingPath = APP_PATH . '/Testing/worldconfig.ini';
 
         if (!is_file($testingPath)) {
-            copy($path, $testingPath);
+            @copy($path, $testingPath);
         }
 
         $iniContents = @parse_ini_file($path);

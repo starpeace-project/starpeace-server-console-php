@@ -102,6 +102,8 @@ class Device
 
     public static function defineOSVars()
     {
+        define('APP_PATH', dirname(dirname(__DIR__)));
+
         switch (self::getOSSpecific()) {
             case 'LINUX':
                 self::defineLinuxVars();
