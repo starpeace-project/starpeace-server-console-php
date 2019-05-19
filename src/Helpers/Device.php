@@ -71,11 +71,7 @@ class Device
 
     public static function pregMatchAgent($deviceArray)
     {
-        if (self::isCLI()) {
-            $data = php_uname('s');
-        } else {
-            $data = $_SERVER['HTTP_USER_AGENT'];
-        }
+        $data = self::isCLI() ? php_uname('s') : $_SERVER['HTTP_USER_AGENT'];
 
         foreach ($deviceArray as $regex => $value) {
             if (preg_match($regex, $data)) {
