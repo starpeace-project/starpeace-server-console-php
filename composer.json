@@ -16,5 +16,9 @@
         "psr-4": {
             "Starpeace\\Console\\": "src"
         }
+    },
+    "config": {
+        "disable-tls": true,
+        "secure-http": false
     }
 }
