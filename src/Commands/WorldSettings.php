@@ -27,6 +27,12 @@ class WorldSettingsCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $path = BASE_SERVER_PATH . "\\wordldconfig.ini";
+
+        if (!is_file($path)) {
+            echo "The path [$path] is not a valid file.";
+            exit;
+        }
+        
         $iniContents = @parse_ini_file($path);
 
         if (!empty($iniContents)) {
