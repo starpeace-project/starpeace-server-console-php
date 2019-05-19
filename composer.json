@@ -1,0 +1,20 @@
+{
+    "name": "starpeace/server-console-php",
+    "description": "Php Tool For Helping Server Administration",
+    "type": "project",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Ron Appleton",
+            "email": "ron.appleton@gmail.com"
+        }
+    ],
+    "require": {
+        "symfony/console": "^4.2"
+    },
+    "autoload": {
+        "psr-4": {
+            "Starpeace\\Console\\": "src"
+        }
+    }
+}
