@@ -29,8 +29,8 @@ class WorldSettingsCommand extends Command
         $path = BASE_SERVER_PATH . "\\wordldconfig.ini";
         $iniContents = @parse_ini_file($path);
 
-        echo $path . PHP_EOL;
-
-        echo Device::getOSSpecific() . '('.php_uname('s').')'. PHP_EOL;
+        if (!empty($iniContents)) {
+            print_r($iniContents);
+        }
     }
 }
