@@ -68,9 +68,9 @@ class WorldSettingsCommand extends Command
 
         if (!empty($iniContents)) {
             $table = WorldConfig::processConfig($iniContents);
-            if (is_dir(BASE_WEB_PATH . 'five\\0\\visual\\voyager\\newlogon')) {
+            if (is_dir(BASE_WEB_PATH . '\\five\\0\\visual\\voyager\\newlogon')) {
                 $output->writeln('Output directory exists.');
-                file_put_contents(BASE_WEB_PATH . 'five\\0\\visual\\voyager\\newlogon\\world_setting.htm', $table);
+                file_put_contents(BASE_WEB_PATH . '\\five\\0\\visual\\voyager\\newlogon\\world_setting.htm', $table);
                 $output->writeln('File written');
             }
         }
