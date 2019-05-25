@@ -10,7 +10,8 @@
         }
     ],
     "require": {
-        "symfony/console": "^4.2"
+        "symfony/console": "^4.2",
+        "nesbot/carbon": "^2.18"
     },
     "autoload": {
         "psr-4": {

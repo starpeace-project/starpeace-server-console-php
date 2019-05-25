@@ -2,10 +2,11 @@
 
 namespace Starpeace\Console\Commands;
 
+use Carbon\Carbon;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Console\Input\InputArgument;
 
 class IPFraudLog extends Command
 {
@@ -44,13 +45,25 @@ class IPFraudLog extends Command
             $fileKey = explode('.', $fileKey);
             $fileKey = current(reset($fileKey));
 
+            $entries = [];
             foreach ($lines as $line) {
                 $line = explode(' ', $line);
 
-                $logon = implode(' ', [$fileKey, $line[2]]);
-                $logoff = implode(' ', [$fileKey, $line[3]]);
+                $entry = [
+                    'player_alias' => $line[0],
+                    'ip_address' => $line[1],
+                    'logon' => Carbon::createFromFormat('y-m-d h:i:s A', implode(' ', [$fileKey, $line[2], $line[3]])),
+                    'logoff' => Carbon::createFromFormat('y-m-d h:i:s A', implode(' ', [$fileKey, $line[4], $line[5]])),
+                ];
+
+                $entries[] = $entry;
             }
+
+            return $entries;
+
         }, $this->fileData);
+
+        dd($this->fileData);
     }
 
     protected function getLogFiles()
