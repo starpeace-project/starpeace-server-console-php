@@ -52,6 +52,7 @@ if (!function_exists('define_testing')) {
         $extraDefines = ['TESTING' => $testing] + $extraDefines;
         array_walk($extraDefines, function ($key, $value) {
             if (is_string($key)) {
+                dump($key);
                 define(strtoupper($key), $value);
             }
         });
