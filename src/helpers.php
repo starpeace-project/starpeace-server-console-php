@@ -8,7 +8,9 @@ if (!function_exists('check_dir')) {
      */
     function check_dir(string $path, bool $create = true): bool
     {
-        if (!is_dir($path)) return $create ? @mkdir($path) : false;
+        if (!is_dir($path)) {
+            return $create ? @mkdir($path) : false;
+        }
 
         return true;
     }
@@ -49,7 +51,9 @@ if (!function_exists('define_testing')) {
     {
         $extraDefines = ['TESTING' => $testing] + $extraDefines;
         array_walk($extraDefines, function ($key, $value) {
-            if (is_string($key)) define(strtoupper($key), $value);
+            if (is_string($key)) {
+                define(strtoupper($key), $value);
+            }
         });
     }
 }
@@ -121,7 +125,8 @@ if (!function_exists('cli')) {
     /**
      * @return bool
      */
-    function cli(): bool {
+    function cli(): bool
+    {
         return php_sapi_name() === 'cli';
     }
 }
