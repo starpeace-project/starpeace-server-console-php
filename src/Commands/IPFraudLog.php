@@ -15,6 +15,8 @@ class IPFraudLog extends Command
     private $interfaceLogPath;
 
     private $fileData = [];
+    private $groupedByIp = [];
+    private $groupedByAlias = [];
 
     public function __construct($name = null)
     {
@@ -39,14 +41,15 @@ class IPFraudLog extends Command
 
         $this->fileData = file_lines_multi(TESTING ? TESTING_PATH : $this->interfaceLogPath, $this->getLogFiles(), true);
 
-        foreach ($this->fileData as $fileKey => &$lines) {
+        $entries = [];
+        foreach ($this->fileData as $fileKey => $lines) {
             $fileKey = explode(' ', $fileKey);
             $fileKey = end($fileKey);
             $fileKey = explode('.', $fileKey);
             $fileKey = reset($fileKey);
 
 
-            foreach ($lines as &$line) {
+            foreach ($lines as $line) {
                 $line = explode(' ', $line);
 
                 if (count($line) == 8) {
@@ -55,23 +58,41 @@ class IPFraudLog extends Command
                     $line = array_values($line);
                 }
 
+                if (count($line) < 7) {
+                    continue;
+                }
+
                 $entry = [
                     'player_alias' => $line[0],
                     'ip_address' => $line[1],
-                    'date' => Carbon::createFromFormat('y-m-d', $fileKey)->format('Y-m-d'),
-                    'cdate' => Carbon::createFromFormat('y-m-d', $fileKey),
-                    'logon' => Carbon::createFromFormat('y-m-d H:i:s A', implode(' ', [$fileKey, $line[2], $line[3]]))->format('d-m-Y H:i:s'),
-                    'clogon' => Carbon::createFromFormat('y-m-d H:i:s A', implode(' ', [$fileKey, $line[2], $line[3]])),
-                    'logoff' => Carbon::createFromFormat('y-m-d H:i:s A', implode(' ', [$fileKey, $line[4], $line[5]]))->format('d-m-Y H:i:s'),
-                    'clogoff' => Carbon::createFromFormat('y-m-d H:i:s A', implode(' ', [$fileKey, $line[4], $line[5]])),
                 ];
 
-                $line = $entry;
+                try {
+                    $entry['date'] = Carbon::createFromFormat('y-m-d', $fileKey)->format('Y-m-d');
+                } catch (\Exception $e) {
+                    // Silence
+                }
+
+                try {
+                    $entry['logon'] = Carbon::createFromFormat('y-m-d H:i:s A', implode(' ', [$fileKey, $line[2], $line[3]]))->format('d-m-Y H:i:s');
+                } catch (\Exception $e) {
+                    // Silence
+                }
+
+                try {
+                    $entry['logoff'] = Carbon::createFromFormat('y-m-d H:i:s A', implode(' ', [$fileKey, $line[4], $line[5]]))->format('d-m-Y H:i:s');
+                } catch (\Exception $e) {
+                    // Silence
+                }
+
+                $entries[] = $entry;
             }
-            unset($line);
         }
 
-        dump($this->fileData);exit;
+        $this->fileData = array_values($entries);
+        $this->groupByIp();
+        $this->groupAliases();
+        dd($this->groupedByAlias);
     }
 
     protected function getLogFiles()
@@ -97,5 +118,34 @@ class IPFraudLog extends Command
     protected function isTesting(InputInterface $input)
     {
         return !empty($input->getArgument('testing'));
+    }
+
+    protected function groupByIp()
+    {
+        $ips = [];
+
+        foreach ($this->fileData as $entry) {
+            try {
+                dump($entry);
+                $ips[$entry['ip_address']][] = $entry;
+            } catch (\Exception $e) {
+                dd($entry, $e);
+            }
+
+        }
+
+        $this->groupedByIp = $ips;
+    }
+
+    protected function groupAliases()
+    {
+        foreach ($this->groupedByIp as $ip => $entries) {
+            $aliases = [];
+            foreach ($entries as $entry) {
+                $aliases[] = $entry['player_alias'];
+            }
+
+            $this->groupedByAlias[] = [$ip => array_unique($aliases)];
+        }
     }
 }
