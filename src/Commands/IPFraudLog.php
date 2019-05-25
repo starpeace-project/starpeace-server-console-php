@@ -35,35 +35,43 @@ class IPFraudLog extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        define_testing($input->getArgument('testing'), ['TESTING_PATH' => path_join(BASE_TESTING_PATH, 'Clients')]);
+        define_testing($this->isTesting($input), ['TESTING_PATH' => path_join(BASE_TESTING_PATH, 'Clients')]);
 
-        $this->fileData = file_lines_multi(TESTING ? TESTING_PATH : $this->interfaceLogPath, $this->getLogFiles());
+        $this->fileData = file_lines_multi(TESTING ? TESTING_PATH : $this->interfaceLogPath, $this->getLogFiles(), true);
 
-        $this->fileData = array_map(function ($fileKey, $lines) {
+        foreach ($this->fileData as $fileKey => &$lines) {
             $fileKey = explode(' ', $fileKey);
             $fileKey = end($fileKey);
             $fileKey = explode('.', $fileKey);
-            $fileKey = current(reset($fileKey));
+            $fileKey = reset($fileKey);
 
-            $entries = [];
-            foreach ($lines as $line) {
+
+            foreach ($lines as &$line) {
                 $line = explode(' ', $line);
+
+                if (count($line) == 8) {
+                    $line[1] = implode('.', [$line[0], $line[1]]);
+                    unset($line[0]);
+                    $line = array_values($line);
+                }
 
                 $entry = [
                     'player_alias' => $line[0],
                     'ip_address' => $line[1],
-                    'logon' => Carbon::createFromFormat('y-m-d h:i:s A', implode(' ', [$fileKey, $line[2], $line[3]])),
-                    'logoff' => Carbon::createFromFormat('y-m-d h:i:s A', implode(' ', [$fileKey, $line[4], $line[5]])),
+                    'date' => Carbon::createFromFormat('y-m-d', $fileKey)->format('Y-m-d'),
+                    'cdate' => Carbon::createFromFormat('y-m-d', $fileKey),
+                    'logon' => Carbon::createFromFormat('y-m-d H:i:s A', implode(' ', [$fileKey, $line[2], $line[3]]))->format('d-m-Y H:i:s'),
+                    'clogon' => Carbon::createFromFormat('y-m-d H:i:s A', implode(' ', [$fileKey, $line[2], $line[3]])),
+                    'logoff' => Carbon::createFromFormat('y-m-d H:i:s A', implode(' ', [$fileKey, $line[4], $line[5]]))->format('d-m-Y H:i:s'),
+                    'clogoff' => Carbon::createFromFormat('y-m-d H:i:s A', implode(' ', [$fileKey, $line[4], $line[5]])),
                 ];
 
-                $entries[] = $entry;
+                $line = $entry;
             }
+            unset($line);
+        }
 
-            return $entries;
-
-        }, $this->fileData);
-
-        dd($this->fileData);
+        dump($this->fileData);exit;
     }
 
     protected function getLogFiles()
@@ -86,4 +94,8 @@ class IPFraudLog extends Command
         return $files;
     }
 
+    protected function isTesting(InputInterface $input)
+    {
+        return !empty($input->getArgument('testing'));
+    }
 }

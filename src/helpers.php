@@ -50,12 +50,10 @@ if (!function_exists('define_testing')) {
     function define_testing(bool $testing, array $extraDefines = [])
     {
         $extraDefines = ['TESTING' => $testing] + $extraDefines;
-        array_walk($extraDefines, function ($key, $value) {
-            if (is_string($key)) {
-                dump($key);
-                define(strtoupper($key), $value);
-            }
-        });
+
+        foreach ($extraDefines as $define => $value) {
+            define(strtoupper((string)$define), $value);
+        }
     }
 }
 
@@ -68,11 +66,11 @@ if (!function_exists('strncmp_get_files')) {
     function strncmp_get_files(string $path, string $needle): array
     {
         $files = scandir($path);
-        array_filter($files, function ($file) use ($needle) {
+        $files = array_filter($files, function ($file) use ($needle) {
             return strncmp($file, $needle, strlen($needle)) === 0;
         });
 
-        return $files;
+        return array_values($files);
     }
 }
 
@@ -87,7 +85,7 @@ if (!function_exists('file_lines')) {
     {
         $lines = [];
         foreach (file(path_join($path, $file)) as $line) {
-            $lines[$useFileName ? $file : null] = $line;
+            $lines[$useFileName ? $file : null][] = trim(preg_replace("/\s+/", " ", $line));
         }
 
         return $lines;
@@ -105,10 +103,10 @@ if (!function_exists('file_lines_multi')) {
     {
         $lines = [];
         foreach ($files as $file) {
-            array_merge($lines, file_lines($path, $file, $useFileName));
+            $lines = array_merge($lines, file_lines($path, $file, $useFileName));
         }
 
-        return $lines;
+        return dump($lines);
     }
 }
 
