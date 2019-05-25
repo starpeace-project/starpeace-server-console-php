@@ -15,7 +15,8 @@
     "autoload": {
         "psr-4": {
             "Starpeace\\Console\\": "src"
-        }
+        },
+        "files": ["src/helpers.php"]
     },
     "config": {
         "disable-tls": true,

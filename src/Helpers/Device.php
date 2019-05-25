@@ -71,7 +71,7 @@ class Device
 
     public static function pregMatchAgent($deviceArray)
     {
-        $data = self::isCLI() ? php_uname('s') : $_SERVER['HTTP_USER_AGENT'];
+        $data = cli() ? php_uname('s') : $_SERVER['HTTP_USER_AGENT'];
 
         foreach ($deviceArray as $regex => $value) {
             if (preg_match($regex, $data)) {
@@ -119,26 +119,32 @@ class Device
 
     public static function defineWindowsVars()
     {
-        define('BASE_WEB_PATH', 'D:\\INETPUB\\wwwroot');
-        define('BASE_DATA_PATH', 'D:\\FIVE\\Data');
-        define('BASE_SERVER_PATH', 'D:\\FIVE\\Servers');
-        define('BASE_COMMON_PATH', 'D:\\FIVE\\Common');
+        define('BASE_WEB_PATH', path_join('D:', 'INETPUB', 'wwwroot'));
+        define('BASE_DATA_PATH', path_join('D:', 'FIVE', 'Data'));
+        define('BASE_LOGS_PATH', path_join(BASE_DATA_PATH, 'Logs'));
+        define('BASE_SERVER_PATH', path_join('D:', 'FIVE', 'Servers'));
+        define('BASE_COMMON_PATH', path_join('D:', 'FIVE', 'Common'));
+        define('BASE_TESTING_PATH', path_join(APP_PATH, 'Testing'));
     }
 
     public static function defineLinuxVars()
     {
-        define('BASE_WEB_PATH', '~\\var\\lib\\five\\www');
-        define('BASE_DATA_PATH', '~\\var\\lib\\five\\data');
-        define('BASE_SERVER_PATH', '~\\var\\lib\\five\\servers');
-        define('BASE_COMMON_PATH', '~\\var\\lib\\five\\common');
+        define('BASE_LINUX_PATH', path_join('', 'var', 'lib', 'five'));
+        define('BASE_WEB_PATH', path_join(BASE_LINUX_PATH, 'www'));
+        define('BASE_DATA_PATH', path_join(BASE_LINUX_PATH,'data'));
+        define('BASE_SERVER_PATH', path_join(BASE_LINUX_PATH, 'servers'));
+        define('BASE_COMMON_PATH', path_join(BASE_LINUX_PATH, 'common'));
+        define('BASE_TESTING_PATH', path_join(APP_PATH, 'Testing'));
     }
 
     public static function defineMacVars()
     {
-        define('BASE_WEB_PATH', '~\\var\\lib\\five\\www');
-        define('BASE_DATA_PATH', '~\\var\\lib\\five\\data');
-        define('BASE_SERVER_PATH', '~\\var\\lib\\five\\servers');
-        define('BASE_COMMON_PATH', '~\\var\\lib\\five\\common');
+        define('BASE_MAC_PATH', path_join('', 'var', 'lib', 'five'));
+        define('BASE_WEB_PATH', path_join(BASE_MAC_PATH, 'www'));
+        define('BASE_DATA_PATH', path_join(BASE_MAC_PATH,'data'));
+        define('BASE_SERVER_PATH', path_join(BASE_MAC_PATH, 'servers'));
+        define('BASE_COMMON_PATH', path_join(BASE_MAC_PATH, 'common'));
+        define('BASE_TESTING_PATH', path_join(APP_PATH, 'Testing'));
     }
 
     public static function isCLI()

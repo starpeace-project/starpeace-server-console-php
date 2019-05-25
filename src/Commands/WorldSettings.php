@@ -2,16 +2,18 @@
 
 namespace Starpeace\Console\Commands;
 
+use Starpeace\Console\Helpers\WorldConfig;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Starpeace\Console\Helpers\WorldConfig;
 
 class WorldSettingsCommand extends Command
 {
     // the name of the command (the part after "bin/console")
     protected static $defaultName = 'generate:world-settings-view';
+
+    private $fileName = 'worldconfig.ini';
 
     private static $DEBUG = true;
 
@@ -28,33 +30,20 @@ class WorldSettingsCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $testingEnabled = (bool) $input->getArgument('testing');
+        $testingEnabled = (bool)$input->getArgument('testing');
 
-        define('TESTING', $testingEnabled);
-
-        if ($testingEnabled) {
-            define('TESTING_PATH', APP_PATH . '/Testing/');
-        }
+        define_testing($input->getArgument('testing'), ['TESTING_PATH' => path_join(APP_PATH, 'Testing')]);
 
         $testingPath = APP_PATH . '/Testing/worldconfig.ini';
         $standardPath = BASE_SERVER_PATH . "\\worldconfig.ini";
 
-        if (self::$DEBUG) {
-            print_r([
-               'Testing Enabled' => $testingEnabled ? 'TRUE' : 'FALSE',
-                'Testing Path' => $testingPath,
-                'Standard Path' => $standardPath,
-            ]);
-        }
 
         if (
             $testingEnabled &&
             !is_file($testingPath)
         ) {
-            if (!is_dir(APP_PATH . '/Testing')) {
-                @mkdir(APP_PATH . '/Testing');
-            }
-            @copy($standardPath, $testingPath);
+            check_dir(path_join(APP_PATH, 'Testing'));
+            copy_files(path_join(APP_PATH, 'Testing'), TESTING_PATH, $this->fileName);
         }
 
         $path = $testingEnabled ? $testingPath : $standardPath;
@@ -68,11 +57,26 @@ class WorldSettingsCommand extends Command
 
         if (!empty($iniContents)) {
             $table = WorldConfig::processConfig($iniContents);
-            if (is_dir(BASE_WEB_PATH . '\\five\\0\\visual\\voyager\\newlogon')) {
+            if (is_dir(path_join(BASE_WEB_PATH, 'five', '0', 'visual', 'voyager', 'newlogon'))) {
                 $output->writeln('Output directory exists.');
-                file_put_contents(BASE_WEB_PATH . '\\five\\0\\visual\\voyager\\newlogon\\world_setting.htm', $table);
+                file_put_contents(path_join(BASE_WEB_PATH, 'five', '0', 'visual', 'voyager', 'newlogon', 'world_setting.htm'), $table);
                 $output->writeln('File written');
             }
         }
+    }
+
+    protected function getIniFileContents()
+    {
+        if (TESTING) {
+            $iniContents = @parse_ini_file(path_join(TESTING_PATH, $this->fileName));
+            if (empty($iniContents)) {
+                copy_files(BASE_SERVER_PATH, TESTING_PATH, $this->fileName);
+                $iniContents = @parse_ini_file(path_join(BASE_SERVER_PATH, $this->fileName));
+            }
+        } else {
+            $iniContents = @parse_ini_file(path_join(BASE_SERVER_PATH, $this->fileName));
+        }
+
+        return $iniContents;
     }
 }
