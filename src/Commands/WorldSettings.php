@@ -8,7 +8,7 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
-class WorldSettingsCommand extends Command
+class WorldSettings extends Command
 {
     // the name of the command (the part after "bin/console")
     protected static $defaultName = 'generate:world-settings-view';
