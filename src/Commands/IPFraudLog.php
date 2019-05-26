@@ -41,55 +41,7 @@ class IPFraudLog extends Command
 
         $this->fileData = file_lines_multi(TESTING ? TESTING_PATH : $this->interfaceLogPath, $this->getLogFiles(), true);
 
-        $entries = [];
-        foreach ($this->fileData as $fileKey => $lines) {
-            $fileKey = explode(' ', $fileKey);
-            $fileKey = end($fileKey);
-            $fileKey = explode('.', $fileKey);
-            $fileKey = reset($fileKey);
-
-
-            foreach ($lines as $line) {
-                $line = explode(' ', $line);
-
-                if (count($line) == 8) {
-                    $line[1] = implode('.', [$line[0], $line[1]]);
-                    unset($line[0]);
-                    $line = array_values($line);
-                }
-
-                if (count($line) < 7) {
-                    continue;
-                }
-
-                $entry = [
-                    'player_alias' => $line[0],
-                    'ip_address' => $line[1],
-                ];
-
-                try {
-                    $entry['date'] = Carbon::createFromFormat('y-m-d', $fileKey)->format('Y-m-d');
-                } catch (\Exception $e) {
-                    // Silence
-                }
-
-                try {
-                    $entry['logon'] = Carbon::createFromFormat('y-m-d H:i:s A', implode(' ', [$fileKey, $line[2], $line[3]]))->format('d-m-Y H:i:s');
-                } catch (\Exception $e) {
-                    // Silence
-                }
-
-                try {
-                    $entry['logoff'] = Carbon::createFromFormat('y-m-d H:i:s A', implode(' ', [$fileKey, $line[4], $line[5]]))->format('d-m-Y H:i:s');
-                } catch (\Exception $e) {
-                    // Silence
-                }
-
-                $entries[] = $entry;
-            }
-        }
-
-        $this->fileData = array_values($entries);
+        $this->processResults();
         $this->groupByIp();
         $this->groupAliases();
         dd($this->groupedByAlias);
@@ -147,5 +99,58 @@ class IPFraudLog extends Command
 
             $this->groupedByAlias[] = [$ip => array_unique($aliases)];
         }
+    }
+
+    protected function processResults()
+    {
+        $entries = [];
+        foreach ($this->fileData as $fileKey => $lines) {
+            $fileKey = explode(' ', $fileKey);
+            $fileKey = end($fileKey);
+            $fileKey = explode('.', $fileKey);
+            $fileKey = reset($fileKey);
+
+
+            foreach ($lines as $line) {
+                $line = explode(' ', $line);
+
+                if (count($line) == 8) {
+                    $line[1] = implode('.', [$line[0], $line[1]]);
+                    unset($line[0]);
+                    $line = array_values($line);
+                }
+
+                if (count($line) < 7) {
+                    continue;
+                }
+
+                $entry = [
+                    'player_alias' => $line[0],
+                    'ip_address' => $line[1],
+                ];
+
+                try {
+                    $entry['date'] = Carbon::createFromFormat('y-m-d', $fileKey)->format('Y-m-d');
+                } catch (\Exception $e) {
+                    // Silence
+                }
+
+                try {
+                    $entry['logon'] = Carbon::createFromFormat('y-m-d H:i:s A', implode(' ', [$fileKey, $line[2], $line[3]]))->format('d-m-Y H:i:s');
+                } catch (\Exception $e) {
+                    // Silence
+                }
+
+                try {
+                    $entry['logoff'] = Carbon::createFromFormat('y-m-d H:i:s A', implode(' ', [$fileKey, $line[4], $line[5]]))->format('d-m-Y H:i:s');
+                } catch (\Exception $e) {
+                    // Silence
+                }
+
+                $entries[] = $entry;
+            }
+        }
+
+        $this->fileData = array_values($entries);
     }
 }
