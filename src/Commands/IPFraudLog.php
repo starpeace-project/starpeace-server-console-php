@@ -329,6 +329,7 @@ class IPFraudLog extends Command
         }
 
         $this->tableData = $builtRows;
+        dump($this->tableData);
     }
 
     protected function showTable()
