@@ -322,14 +322,13 @@ class IPFraudLog extends Command
             $row = [];
             $row[] = $ip;
 
-            $row[] = implode(PHP_EOL, array_unique($rows->where('ip', $ip)->pluck('date')->toArray()));
-            $row[] = implode(PHP_EOL, array_unique($rows->where('ip', $ip)->pluck('alias')->toArray()));
-            $row[] = implode(PHP_EOL, array_unique($rows->where('ip', $ip)->pluck('paid_planets')->toArray()));
+            $row[] = implode(', ', array_unique($rows->where('ip', $ip)->pluck('date')->toArray()));
+            $row[] = implode(', ', array_unique($rows->where('ip', $ip)->pluck('alias')->toArray()));
+            $row[] = implode(', ', array_unique($rows->where('ip', $ip)->pluck('paid_planets')->toArray()));
             $builtRows[] = $row;
         }
 
         $this->tableData = $builtRows;
-        dump($this->tableData);
     }
 
     protected function showTable()
@@ -337,6 +336,11 @@ class IPFraudLog extends Command
         $table = new Table($this->output);
         $table->setHeaders(['IP Address', 'Dates', 'Aliases', 'Paid Planet Access']);
         $table->setRows($this->tableData);
+        $table->setColumnWidths([20, 11, 25, 50]);
+        $table->setColumnMaxWidth(0, 20);
+        $table->setColumnMaxWidth(1, 11);
+        $table->setColumnMaxWidth(2, 25);
+        $table->setColumnMaxWidth(3, 50);
         $table->render();
     }
 }
