@@ -15,8 +15,12 @@ class IPFraudLog extends Command
     private $interfaceLogPath;
 
     private $fileData = [];
+    private $groupedByDate = [];
     private $groupedByIp = [];
     private $groupedByAlias = [];
+    private $aliases = [];
+
+    private $output;
 
     public function __construct($name = null)
     {
@@ -37,14 +41,51 @@ class IPFraudLog extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
+        $this->output = $output;
         define_testing($this->isTesting($input), ['TESTING_PATH' => path_join(BASE_TESTING_PATH, 'Clients')]);
 
         $this->fileData = file_lines_multi(TESTING ? TESTING_PATH : $this->interfaceLogPath, $this->getLogFiles(), true);
 
         $this->processResults();
-        $this->groupByIp();
-        $this->groupAliases();
-        dd($this->groupedByAlias);
+        $this->gatherAliases();
+        $this->getSubscriptionDetails();
+        //$this->appendToFileData();
+
+        // fileData array now has all needed data.
+
+        $this->groupByDate();
+
+        foreach ($this->groupedByDate as $date => &$entries) {
+            $entries = array_multi_group_by_key($entries, 'ip_address', true);
+        }
+
+        foreach ($this->groupedByDate as $date => &$dateEntries) {
+            foreach ($dateEntries as $ip => &$ipEntries) {
+                $ipEntries = array_multi_group_by_key($ipEntries, 'player_alias', true);
+                $ipEntries = array_unique(array_keys($ipEntries));
+                foreach ($ipEntries as $key => $alias) {
+                    $ipEntries[$alias] = $this->aliases[$alias];
+                    unset($ipEntries[$key]);
+                }
+            }
+        }
+
+        $this->filterOutSingles();
+
+        $this->filterAllPaid($output);
+
+        $this->filterOneFreeOnePaid();
+
+        $this->unsetEmpties();
+
+        dd($this->groupedByDate);
+    }
+
+    protected function appendToFileData()
+    {
+        foreach ($this->fileData as &$entry) {
+            $entry = array_merge($entry, $this->aliases[$entry['player_alias']]);
+        }
     }
 
     protected function getLogFiles()
@@ -72,34 +113,6 @@ class IPFraudLog extends Command
         return !empty($input->getArgument('testing'));
     }
 
-    protected function groupByIp()
-    {
-        $ips = [];
-
-        foreach ($this->fileData as $entry) {
-            try {
-                dump($entry);
-                $ips[$entry['ip_address']][] = $entry;
-            } catch (\Exception $e) {
-                dd($entry, $e);
-            }
-
-        }
-
-        $this->groupedByIp = $ips;
-    }
-
-    protected function groupAliases()
-    {
-        foreach ($this->groupedByIp as $ip => $entries) {
-            $aliases = [];
-            foreach ($entries as $entry) {
-                $aliases[] = $entry['player_alias'];
-            }
-
-            $this->groupedByAlias[] = [$ip => array_unique($aliases)];
-        }
-    }
 
     protected function processResults()
     {
@@ -152,5 +165,129 @@ class IPFraudLog extends Command
         }
 
         $this->fileData = array_values($entries);
+    }
+
+    protected function gatherAliases()
+    {
+        $this->aliases = array_keys(array_multi_group_by_key($this->fileData, 'player_alias', true));
+    }
+
+    protected function getSubscriptionDetails()
+    {
+        if (TESTING && is_file(path_join(TESTING_PATH, 'subs.json'))) {
+            $this->aliases = json_decode(file_get_contents(path_join(TESTING_PATH, 'subs.json')), true);
+        } else {
+            $url = 'https://starpeaceonline.info/api/console/subscription/data/' . json_encode($this->aliases);
+            $this->aliases = json_decode(file_get_contents($url), true);
+        }
+
+
+        if(TESTING) {
+            file_put_contents(path_join(TESTING_PATH, 'subs.json'), json_encode($this->aliases));
+        }
+    }
+
+    protected function groupByDate()
+    {
+        $this->groupedByDate = array_multi_group_by_key($this->fileData, 'date', true);
+    }
+
+    protected function groupByIp()
+    {
+        $this->groupedByIp = array_multi_group_by_key($this->fileData, 'ip_address', true);
+    }
+
+    protected function groupAliases()
+    {
+        foreach ($this->groupedByIp as $ip => $entries) {
+            $aliases = [];
+            foreach ($entries as $entry) {
+                $aliases[] = $entry['player_alias'];
+            }
+
+            foreach (array_unique($aliases) as $alias) {
+                $this->groupedByAlias[$ip][$alias] = [];
+            }
+        }
+    }
+
+    protected function filterOutSingles()
+    {
+        foreach ($this->groupedByDate as $date => $ips) {
+            foreach ($ips as $ip => $users) {
+                if (count($users) < 2) {
+                    unset($this->groupedByDate[$date][$ip]);
+                }
+            }
+        }
+    }
+
+    protected function filterAllPaid()
+    {
+        foreach ($this->groupedByDate as $date => $ips) {
+            foreach ($ips as $ip => $users) {
+                $paid = 0;
+                foreach ($users as $alias => $user) {
+                    if (!$this->outOfDate($user['paid_planets'])) {
+                        $paid++;
+                    }
+                }
+                if ($paid === count($users)) {
+                    unset($this->groupedByDate[$date][$ip]);
+                }
+            }
+        }
+    }
+
+    protected function filterOneFreeOnePaid()
+    {
+        foreach ($this->groupedByDate as $date => $ips) {
+            foreach ($ips as $ip => $users) {
+                if (count($users) == 2) {
+                    $oneValid = false;
+                    $oneInValid = false;
+
+                    foreach ($users as $alias => $user) {
+                        if (!$this->outOfDate($user['paid_planets'])) {
+                            $oneValid = true;
+                        } else {
+                            $oneInValid = true;
+                        }
+                    }
+                    if ($oneValid && $oneInValid) {
+                        unset($this->groupedByDate[$date][$ip]);
+                    }
+                }
+            }
+        }
+    }
+
+    protected function getCarbonPaidPlanets($date)
+    {
+        if (strlen($date) == 10) {
+            $date = Carbon::createFromFormat('m/d/Y', $date);
+        } else {
+            $date = Carbon::createFromFormat('n/j/Y', $date);
+        }
+
+        return $date;
+    }
+
+    protected function outOfDate($date)
+    {
+        if ($date == "none") {
+            return true;
+        }
+
+        return Carbon::now()->diffInDays($this->getCarbonPaidPlanets($date)) < 1;
+    }
+
+    protected function unsetEmpties()
+    {
+        foreach ($this->groupedByDate as $date => $ips) {
+            if (empty($ips)) {
+                unset($this->groupedByDate[$date]);
+            }
+        }
     }
 }

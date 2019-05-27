@@ -106,7 +106,7 @@ if (!function_exists('file_lines_multi')) {
             $lines = array_merge($lines, file_lines($path, $file, $useFileName));
         }
 
-        return dump($lines);
+        return $lines;
     }
 }
 
@@ -130,4 +130,45 @@ if (!function_exists('cli')) {
     }
 }
 
+if (!function_exists('array_multi_group_by_key')) {
+    function array_multi_group_by_key(array &$data, string $key, bool $return = false): array {
+        $output = [];
+        foreach ($data as $array) {
+            if (!empty($array[$key])) {
+                $output[$array[$key]][] = $array;
+            }
+        }
+
+        if (!$return) {
+            $data = $output;
+        }
+
+        return $output;
+    }
+}
+
+if (!function_exists('array_keys_multi')) {
+    function array_keys_multi(array $array): array {
+        $output = [];
+        foreach ($array as $newArray) {
+            $output = array_merge($output, $newArray);
+        }
+
+        return $output;
+    }
+}
+
+if (!function_exists('array_unique_values')) {
+    function array_unique_values(array $array): array {
+        return array_unique(array_values($array));
+    }
+}
+
+if (!function_exists('array_default_multi')) {
+    function array_default(array &$array, $default = []) {
+        foreach ($array as $key => &$innerArray) {
+            $innerArray = $default;
+        }
+    }
+}
 
