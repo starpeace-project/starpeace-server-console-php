@@ -341,6 +341,7 @@ class IPFraudLog extends Command
         $table->setColumnMaxWidth(1, 11);
         $table->setColumnMaxWidth(2, 25);
         $table->setColumnMaxWidth(3, 50);
+        $table->setStyle('box');
         $table->render();
     }
 }
