@@ -7,6 +7,8 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Helper\Table;
+use Tightenco\Collect\Support\Collection;
 
 class IPFraudLog extends Command
 {
@@ -19,6 +21,7 @@ class IPFraudLog extends Command
     private $groupedByIp = [];
     private $groupedByAlias = [];
     private $aliases = [];
+    private $tableData = [];
 
     private $output;
 
@@ -78,7 +81,9 @@ class IPFraudLog extends Command
 
         $this->unsetEmpties();
 
-        dd($this->groupedByDate);
+        $this->tabulariseData();
+
+        $this->showTable();
     }
 
     protected function appendToFileData()
@@ -289,5 +294,45 @@ class IPFraudLog extends Command
                 unset($this->groupedByDate[$date]);
             }
         }
+    }
+
+    protected function tabulariseData()
+    {
+        foreach ($this->groupedByDate as $date => $ips) {
+            foreach ($ips as $ip => $users) {
+                foreach ($users as $alias => $user) {
+                    $row['date'] = $date;
+                    $row['ip'] = $ip;
+                    $row['alias'] = $alias;
+                    $row['paid_planets'] = $alias.': '.$user['paid_planets'];
+                    $this->tableData[] = $row;
+                }
+            }
+        }
+
+        $rows = new Collection($this->tableData);
+
+        $ipList = $rows->pluck('ip')->unique('ip');
+
+        $builtRows = [];
+        foreach ($ipList as $ip) {
+            $row = [];
+            $row[] = $ip;
+
+            $row[] = implode(PHP_EOL, array_unique($rows->where('ip', $ip)->pluck('date')->toArray()));
+            $row[] = implode(PHP_EOL, array_unique($rows->where('ip', $ip)->pluck('alias')->toArray()));
+            $row[] = implode(PHP_EOL, array_unique($rows->where('ip', $ip)->pluck('paid_planets')->toArray()));
+            $builtRows[] = $row;
+        }
+
+        $this->tableData = $builtRows;
+    }
+
+    protected function showTable()
+    {
+        $table = new Table($this->output);
+        $table->setHeaders(['IP Address', 'Dates', 'Aliases', 'Paid Planet Access']);
+        $table->setRows($this->tableData);
+        $table->render();
     }
 }

@@ -11,7 +11,8 @@
     ],
     "require": {
         "symfony/console": "^4.2",
-        "nesbot/carbon": "^2.18"
+        "nesbot/carbon": "^2.18",
+        "tightenco/collect": "^5.8"
     },
     "autoload": {
         "psr-4": {
