@@ -4,10 +4,10 @@ namespace Starpeace\Console\Commands;
 
 use Carbon\Carbon;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Console\Helper\Table;
 use Tightenco\Collect\Support\Collection;
 
 class IPFraudLog extends Command
@@ -47,7 +47,8 @@ class IPFraudLog extends Command
         $this->output = $output;
         define_testing($this->isTesting($input), ['TESTING_PATH' => path_join(BASE_TESTING_PATH, 'Clients')]);
 
-        $this->fileData = file_lines_multi(TESTING ? TESTING_PATH : $this->interfaceLogPath, $this->getLogFiles(), true);
+        $this->fileData = file_lines_multi(TESTING ? TESTING_PATH : $this->interfaceLogPath, $this->getLogFiles(),
+            true);
 
         $this->processResults();
         $this->gatherAliases();
@@ -154,13 +155,15 @@ class IPFraudLog extends Command
                 }
 
                 try {
-                    $entry['logon'] = Carbon::createFromFormat('y-m-d H:i:s A', implode(' ', [$fileKey, $line[2], $line[3]]))->format('d-m-Y H:i:s');
+                    $entry['logon'] = Carbon::createFromFormat('y-m-d H:i:s A',
+                        implode(' ', [$fileKey, $line[2], $line[3]]))->format('d-m-Y H:i:s');
                 } catch (\Exception $e) {
                     // Silence
                 }
 
                 try {
-                    $entry['logoff'] = Carbon::createFromFormat('y-m-d H:i:s A', implode(' ', [$fileKey, $line[4], $line[5]]))->format('d-m-Y H:i:s');
+                    $entry['logoff'] = Carbon::createFromFormat('y-m-d H:i:s A',
+                        implode(' ', [$fileKey, $line[4], $line[5]]))->format('d-m-Y H:i:s');
                 } catch (\Exception $e) {
                     // Silence
                 }
@@ -187,7 +190,7 @@ class IPFraudLog extends Command
         }
 
 
-        if(TESTING) {
+        if (TESTING) {
             file_put_contents(path_join(TESTING_PATH, 'subs.json'), json_encode($this->aliases));
         }
     }
@@ -304,7 +307,7 @@ class IPFraudLog extends Command
                     $row['date'] = $date;
                     $row['ip'] = $ip;
                     $row['alias'] = $alias;
-                    $row['paid_planets'] = $alias.': '.$user['paid_planets'];
+                    $row['paid_planets'] = $alias . ': ' . $user['paid_planets'];
                     $this->tableData[] = $row;
                 }
             }
@@ -333,6 +336,11 @@ class IPFraudLog extends Command
         $table = new Table($this->output);
         $table->setHeaders(['IP Address', 'Dates', 'Aliases', 'Paid Planet Access']);
         $table->setRows($this->tableData);
+        $table->setColumnWidths([20, 11, 25, 50]);
+        $table->setColumnMaxWidth(0, 20);
+        $table->setColumnMaxWidth(1, 11);
+        $table->setColumnMaxWidth(2, 25);
+        $table->setColumnMaxWidth(3, 50);
         $table->render();
     }
 }
